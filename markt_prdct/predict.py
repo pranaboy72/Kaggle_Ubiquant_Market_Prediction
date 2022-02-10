@@ -43,15 +43,16 @@ t=range(len(plt_dt))
 
 reg=LinearRegression()
 reg.fit(data,target)
-coef=reg.coef_
+coef=(reg.coef_).reshape(-1)
 intercept=reg.intercept_
 
 ## Build the linear function
 def f(x,co,inter):
-  return sum(list(co)*list(x)) + inter
+  return co*x + inter
 
 #plot
 plt.plot(t,plt_dt,'b')
+plt.plot(t,plt_dt_2,'c')
 plt.plot(t,f(t,coef,float(intercept)),'r')
 plt.xlabel('Time Step')
 plt.ylabel('Price')
