@@ -32,12 +32,12 @@ plt_data=np.array(plt_dt).reshape((1,-1))
 plt_dt_2=train_data_2[0][4:]
 plt_data_2=np.array(plt_dt_2).reshape((1,-1))
 
-data=[plt_data, plt_data_2]
+data=np.concatenate([plt_data, plt_data_2],axis=0)
 
 target_1=(np.array(train_data[0][3])).reshape((-1,1))
 target_2=(np.array(train_data_2[0][3])).reshape((-1,1))
 
-target=[target_1, target_2]
+target=np.concatenate([target_1, target_2],axis=0)
 
 t=range(len(plt_dt))
 
