@@ -6,6 +6,7 @@ from sklearn.linear_model import LinearRegression
 # visulize 할 index 정하기
 idx=100 # 무조건 10의 배수!!!!!!!!!!!!
 
+
 # csv 파일을 리스트로 변환해주기
 ## train data
 f=open("/content/train.csv","r") # 디렉토리는 알아서 설정
@@ -14,6 +15,7 @@ reader=csv.reader(f)
 count=0
 train_data=[]
 train_data_2=[]
+
 
 # csv파일의 데이터 값들을 반복문으로 이중리스트 만들어주기
 f = open("/content/train.csv",'r')
@@ -44,6 +46,7 @@ while True:
 f.close()
 count-=1 # 각 열들을 나타내주는 0행을 제외하고 넣어줬기 때문에 다시 빼줘야 얻어낸 총 데이터 개수이다
 
+
 # train data 의 target 값들 모아둔 리스트 만들기
 f_data=[]
 target=[]
@@ -54,6 +57,7 @@ for i in range(int(count*0.7)):  # 아까 구한 count 를 활용하여 뽑아�
   target.append(append_target)
   f_data.append(train_data[i][4:])
 
+  
 # 똑같이 test data 다듬기
 test_fdata=[]
 test_target=[]
@@ -62,9 +66,11 @@ for i in range(int(count*0.3)):
   test_fdata.append(test_data[i][4:])
   test_target.append(test_data[i][3])  # test data의 target은 선형회귀를 하는게 아니라 나중에 평가용이므로 이중리스트로 만들지 않는다
   
+  
 # Linear Regression
 reg=LinearRegression()
 reg.fit(f_data,target)
+
 
 # Predict & Plot
 predict=reg.predict(test_fdata)
