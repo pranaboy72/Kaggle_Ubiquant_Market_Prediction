@@ -37,7 +37,7 @@ f.close()
 count-=1 # 각 열들을 나타내주는 0행을 제외하고 넣어줬기 때문에 다시 빼줘야 얻어낸 총 데이터 개수이다
 
 
-# train data 의 target 값들 모아둔 리스트 만들기
+# train data 의 f data, target 값들 모아둔 리스트 각각 만들기
 f_data=[]
 target=[]
 
