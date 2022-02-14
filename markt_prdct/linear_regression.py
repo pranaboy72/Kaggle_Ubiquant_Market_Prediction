@@ -7,16 +7,6 @@ from sklearn.linear_model import LinearRegression
 idx=100 # 무조건 10의 배수!!!!!!!!!!!!
 
 
-# csv 파일을 리스트로 변환해주기
-## train data
-f=open("/content/train.csv","r") # 디렉토리는 알아서 설정
-
-reader=csv.reader(f)
-count=0
-train_data=[]
-train_data_2=[]
-
-
 # csv파일의 데이터 값들을 반복문으로 이중리스트 만들어주기
 f = open("/content/train.csv",'r')
 count=0
