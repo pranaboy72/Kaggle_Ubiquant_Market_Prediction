@@ -62,9 +62,26 @@ reg=LinearRegression()
 reg.fit(f_data,target)
 
 
-# Predict & Plot
+# Linear Regression Predict
 predict=reg.predict(test_fdata)
 predict=np.array(predict).reshape(-1)
+
+#keras linear Regression model Predict
+
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Dense(1, activation='linear'))
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.001, momentum=0.0) 
+model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
+model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
+model.predict(f_data)
+model.evaluate(test_fdata, test_target)
+
+predict_k =model.predict(test_fdata)
+predict_k =np.array(predict_k).reshape(-1)
+evaluate = model.evaluate(test_fdata, test_target)
+
+
+#linear regression plot
 
 t=list(range(int(count*0.3)))
 plt.plot(t,test_target,'r',label='target')
@@ -73,3 +90,16 @@ plt.xlabel('Data')
 plt.ylabel('Price')
 plt.legend(loc='best', ncol=2)
 plt.show()
+
+
+#keras linear model plot
+
+t=list(range(int(count*0.3)))
+plt.plot(t,test_target,'r',label='target')
+plt.plot(t,predict_k,'b',label='predicted')
+plt.xlabel('Data')
+plt.ylabel('Price')
+plt.legend(loc='best', ncol=2)
+plt.show()
+
+print(evaluate) 
