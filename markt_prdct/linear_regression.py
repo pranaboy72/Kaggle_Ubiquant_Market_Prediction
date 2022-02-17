@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 from sklearn.linear_model import LinearRegression
+import tensorflow as tf
 
 # visulize 할 index 정하기
 idx=100 # 무조건 10의 배수!!!!!!!!!!!!
