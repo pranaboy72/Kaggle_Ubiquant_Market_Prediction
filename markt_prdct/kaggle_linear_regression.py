@@ -5,7 +5,7 @@ import keras
 from tensorflow import keras
 from tensorflow.keras import layers
 
-idx=10000
+idx=1000
 f = open("/kaggle/input/ubiquant-market-prediction/train.csv",'r')
 count=0
 
@@ -31,14 +31,16 @@ count-=1
 f_data=[]
 target=[]
 
-for i in range(int(count)):  # 아까 구한 count 를 활용하여 뽑아낸 행의 개수를 구한다
+for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행의 개수를 구한다
   append_target=[]
+  #print(train_data[i][3])
   append_target.append(train_data[i][3])  # target data는 더 복잡하게 구하는 이유는 그냥 append 해버리면 이중리스트가 되지 않는다
+  #print(append_target)
   target.append(append_target)
   f_data.append(train_data[i][4:])
     
 model = keras.Sequential()
 model.add(layers.Dense(1,activation='linear'))
-optimizer= keras.optimizers.Adam(learning_rate=0.001, momentum=0.0)
+optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
 model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
 model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
