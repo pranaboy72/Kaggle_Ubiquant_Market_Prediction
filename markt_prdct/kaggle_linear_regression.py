@@ -33,6 +33,8 @@ target=[]
 
 for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행의 개수를 구한다
   append_target=[]
+  
+  
   #print(train_data[i][3])
   append_target.append(train_data[i][3])  # target data는 더 복잡하게 구하는 이유는 그냥 append 해버리면 이중리스트가 되지 않는다
   #print(append_target)
@@ -44,3 +46,12 @@ model.add(layers.Dense(1,activation='linear'))
 optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
 model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
 model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
+
+import ubiquant
+env = ubiquant.make_env()   # initialize the environment
+iter_test = env.iter_test()    # an iterator which loops over the test set and sample submission
+
+for (test_df, sample_prediction_df) in iter_test:
+    numpy_test_df=test_df.to_numpy()
+    sample_prediction_df['target'] = model.predict(numpy_test_df[:,2:].astype(float))  # make your predictions here
+    env.predict(sample_prediction_df)   # register your predictions
