@@ -42,11 +42,13 @@ for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행�
   f_data.append(train_data[i][4:])
 
 # 간단한 linear regression model(layer 1개)    
-#model = keras.Sequential()
-#model.add(layers.Dense(1,activation='linear'))
-#optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
-#model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
-#model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
+'''
+model = keras.Sequential()
+model.add(layers.Dense(1,activation='linear'))
+optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
+model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
+model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
+'''
 
 # layer 3개, relu regression. 점수: 0.034
 def rmse(y_true, y_pred):
