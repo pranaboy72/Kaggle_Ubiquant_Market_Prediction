@@ -40,13 +40,32 @@ for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행�
   #print(append_target)
   target.append(append_target)
   f_data.append(train_data[i][4:])
-    
-model = keras.Sequential()
-model.add(layers.Dense(1,activation='linear'))
-optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
-model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
-model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
 
+# 간단한 linear regression model(layer 1개)    
+#model = keras.Sequential()
+#model.add(layers.Dense(1,activation='linear'))
+#optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
+#model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
+#model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
+
+# layer 3개, relu regression. 점수: 0.034
+def rmse(y_true, y_pred):
+    return K.sqrt(K.mean(K.square(y_pred - y_true)))
+
+tf.random.set_seed(42)
+
+model = Sequential([
+    Dense(256, activation='relu'),
+    Dense(256, activation='relu'),
+    Dense(128, activation='relu'),
+    Dense(1)
+])
+
+model.compile(loss=rmse, optimizer=Adam(), metrics=[rmse])
+
+model.fit(f_data, target, epochs=100)
+
+# 제출 및 점수 
 import ubiquant
 env = ubiquant.make_env()   # initialize the environment
 iter_test = env.iter_test()    # an iterator which loops over the test set and sample submission
