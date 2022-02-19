@@ -52,7 +52,7 @@ for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행�
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
-tf.random.set_seed(42) # 모델을 생성할때마다 파라미터를 초기화하면서 다른 파라미터를 얻게됨
+tf.random.set_seed(42) # 파라미터를 생성하는 방식 고정
 
 model = Sequential([
     Dense(256, activation='relu'),
