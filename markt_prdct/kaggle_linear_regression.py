@@ -64,7 +64,7 @@ model = Sequential([
     Dense(1)
 ])
 
-model.compile(loss='rmse', optimizer=Adam(), metrics=[accuracy])  # metrics rmse 보다는 accuracy가 조금더 정확도 높았음 (score: 0.076)
+model.compile(loss=rmse, optimizer=Adam(), metrics=[accuracy])  # metrics rmse 보다는 accuracy가 조금더 정확도 높았음 (score: 0.076)
 
 model.fit(f_data, target, epochs=100)
 
