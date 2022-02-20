@@ -51,10 +51,10 @@ model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
 '''
 
 # layer 3개, relu regression. 점수: 0.034
-'''
+
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
-'''
+
 #tf.random.set_seed(42) # 파라미터를 생성하는 방식 고정
 
 model = Sequential([
