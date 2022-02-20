@@ -5,7 +5,7 @@ import keras
 from tensorflow import keras
 from tensorflow.keras import layers
 
-idx=1000
+idx=10000
 f = open("/kaggle/input/ubiquant-market-prediction/train.csv",'r')
 count=0
 
@@ -51,10 +51,11 @@ model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
 '''
 
 # layer 3개, relu regression. 점수: 0.034
+'''
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
-
-tf.random.set_seed(42) # 파라미터를 생성하는 방식 고정
+'''
+#tf.random.set_seed(42) # 파라미터를 생성하는 방식 고정
 
 model = Sequential([
     Dense(256, activation='relu'),
@@ -63,7 +64,7 @@ model = Sequential([
     Dense(1)
 ])
 
-model.compile(loss=rmse, optimizer=Adam(), metrics=[rmse])
+model.compile(loss='rmse', optimizer=Adam(), metrics=[accuracy])  # metrics rmse 보다는 accuracy가 조금더 정확도 높았음 (score: 0.076)
 
 model.fit(f_data, target, epochs=100)
 
