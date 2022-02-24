@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import csv
 import numpy as np
-import keras
-from tensorflow import keras
-from tensorflow.keras import layers
+import tensorflow as tf
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras import backend as K
 
 idx=10000
 f = open("/kaggle/input/ubiquant-market-prediction/train.csv",'r')
@@ -30,33 +32,33 @@ count-=1
 
 f_data=[]
 target=[]
+val_data=[]
+val_target=[]
 
-for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행의 개수를 구한다
+f_len= int((count-1)*0.7)
+val_len = int((count-1)*0.3)
+
+# train_data
+for i in range(f_len):  # 아까 구한 count 를 활용하여 뽑아낸 행의 개수를 구한다, model train 할때 쓰이는 데이터는 총 데이터의 70프로
   append_target=[]
-  
-  
   #print(train_data[i][3])
   append_target.append(train_data[i][3])  # target data는 더 복잡하게 구하는 이유는 그냥 append 해버리면 이중리스트가 되지 않는다
   #print(append_target)
   target.append(append_target)
   f_data.append(train_data[i][4:])
 
-# 간단한 linear regression model(layer 1개)    
+# valid_data
+for i in range(val_len):  # validation data 를 train data에서 30프로 정도를 사용
+  append_val_target=[]
+  append_val_target.append(train_data[f_len+i][3])
+  val_target.append(append_val_target)
+  val_data.append(train_data[f_len+i][4:])
+    
+#tf.random.set_seed(42)
 '''
-model = keras.Sequential()
-model.add(layers.Dense(1,activation='linear'))
-optimizer= keras.optimizers.SGD(learning_rate=0.001, momentum=0.0)
-model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
-model.fit(f_data, target, batch_size=64, epochs = 100,  shuffle=True)
-'''
-
-# layer 3개, relu regression. 점수: 0.034
-
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
-
-#tf.random.set_seed(42) # 파라미터를 생성하는 방식 고정
-
+'''
 model = Sequential([
     Dense(256, activation='relu'),
     Dense(256, activation='relu'),
@@ -64,16 +66,21 @@ model = Sequential([
     Dense(1)
 ])
 
-model.compile(loss=rmse, optimizer=Adam(), metrics=[accuracy])  # metrics rmse 보다는 accuracy가 조금더 정확도 높았음 (score: 0.076)
+model.compile(loss='mse', optimizer='adam', metrics=['accuracy']) # loss 함수로 categorical crossentropy 를 사용해보니 validation이 일정하게 나온다 -> mse 사용
 
-model.fit(f_data, target, epochs=100)
+from tensorflow.python.keras.callbacks import EarlyStopping # EarlyStopping 을 통해 모델 학습에 epoch 20번 동안 진전이 없으면 종료한다
+early_stopping = EarlyStopping(patience=20)
+model.fit(f_data,target,epochs=1000, batch_size=32,validation_data=(val_data,val_target),callbacks=[early_stopping])
 
-# 제출 및 점수 
+from tensorflow.python.keras.models import load_model   # load model 로 방금 만든 모델을 kaggle output 파일에 저장한다
+model.save('ubiquant_model1.h5')
+model_1 = load_model('ubiquant_model1.h5')  # 저장한 모델을 다음과 같이 불러온다
+
 import ubiquant
 env = ubiquant.make_env()   # initialize the environment
 iter_test = env.iter_test()    # an iterator which loops over the test set and sample submission
 
 for (test_df, sample_prediction_df) in iter_test:
     numpy_test_df=test_df.to_numpy()
-    sample_prediction_df['target'] = model.predict(numpy_test_df[:,2:].astype(float))  # make your predictions here
+    sample_prediction_df['target'] = model_1.predict(numpy_test_df[:,2:].astype(float))  # make your predictions here
     env.predict(sample_prediction_df)   # register your predictions
