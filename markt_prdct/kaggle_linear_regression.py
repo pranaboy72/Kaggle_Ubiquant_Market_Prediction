@@ -23,12 +23,14 @@ while True:
     
     train_data.append(append_data) # 만들어낸 append data를 train_data에 다시 넣어주면 이중리스트 형성(매 루프마다 리스트가 한개씩 들어가는 꼴)
                                    # 이렇게 만들어낸 train data로 선형회귀 모델을 만들 것이다
-  
+
   if count==2*idx+1:  # 원하는 만큼 뽑아냈으면 break
     break
     
   count+=1  # 행 세주기
 f.close()
+
+#K-fold
 
 print(len(train_data))
 f_data=[]
@@ -67,13 +69,12 @@ def rmse(y_true, y_pred):
 model = Sequential([
     Dense(256, activation='relu'),
     Dense(256, activation='relu'),
-    Dense(256, activation='relu'),
-    Dense(256, activation='relu'),
+    Dropout(0.4),
     Dense(128, activation='relu'),
     Dense(1)
 ])
 
-model.compile(loss='mse', optimizer='sgd', metrics=['accuracy'])
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 from tensorflow.python.keras.callbacks import EarlyStopping
 early_stopping = EarlyStopping(patience=20)
