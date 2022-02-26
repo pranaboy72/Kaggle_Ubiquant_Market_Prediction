@@ -7,9 +7,10 @@ from tensorflow.keras.models import Model
 from sklearn import metrics
 from scipy.stats import zscore
 from sklearn.model_selection import KFold
+from tensorflow.python.keras.callbacks import EarlyStopping
 
 
-idx=10000
+idx=100000
 f = open("/kaggle/input/ubiquant-market-prediction/train.csv",'r')
 count=0
 
@@ -56,11 +57,13 @@ for i in range(count-1):  # 아까 구한 count 를 활용하여 뽑아낸 행�
 f_data = np.array(f_data)
 target = np.array(target)
 
+
 def build_model():
     input = Input(shape=(300,), name = 'input')
     hidden1 = Dense(256, activation = 'relu', name = 'dense1')(input)
     hidden2 = Dense(256, activation = 'relu', name = 'dense2')(hidden1)
-    hidden3 = Dense(128, activation = 'relu', name = 'dense3')(hidden2)
+    dropout = Dropout(0.3)(hidden2)
+    hidden3 = Dense(128, activation = 'relu', name = 'dense3')(dropout)
     output = Dense(1, name = 'output')(hidden3)
     
     model = Model(inputs=[input], outputs=output)
@@ -68,22 +71,27 @@ def build_model():
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     
     return model
-
+    
+    
 import ubiquant
 env = ubiquant.make_env()   # initialize the environment
 iter_test = env.iter_test()    # an iterator which loops over the test set and sample submission
 
-EPOCH=100
+
+EPOCH=300
 
 kf = KFold(5, shuffle=True, random_state = 111) # random_state = consistency
-#oos_y = []
-oos_pred = []
-oos_pred_1 = []
-oos_pred_2 = []
 
-fold = 0
 for (test_df, sample_prediction_df) in iter_test:
     numpy_test_df=test_df.to_numpy()
+    test_len = numpy_test_df.shape[0]
+    print(test_len)
+    
+    oos_pred = []
+    append_pred =[]
+    mean_pred = []
+    
+    fold = 0
     for train_idx, val_idx in kf.split(f_data):
         fold+=1
         print(f"Fold #{fold}")
@@ -92,19 +100,23 @@ for (test_df, sample_prediction_df) in iter_test:
         y_train, y_val = target[train_idx], target[val_idx]
 
         model = build_model()
-
-        model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs = EPOCH)
+        early_stopping = EarlyStopping(patience = 50)
+        model.fit(x_train, y_train, batch_size=64, validation_data=(x_val, y_val), epochs = EPOCH, callbacks=[early_stopping])
 
         pred = model.predict(numpy_test_df[:,2:].astype(float))
 
         oos_pred.append(pred)
         print(oos_pred)
+     
+    
+    for j in range(test_len):
+        for k in range(fold): 
+            append_pred.append(oos_pred[k][j][-1])
+        mean = np.mean(append_pred)
+        mean_pred.append([mean])
 
-for i in fold: 
-    oos_pred_1.append(oos_pred[i][0][-1])
-    oos_pred_2.append(oos_pred[i][1][-1])
-        
-oos_pred_1 = np.mean(np.concatenate(oos_pred_1))
-oos_pred_2 = np.mean(np.concatenate(oos_pred_2))
-sample_prediction_df['target'] = [oos_pred_1, oos_pred_2]
-env.predict(sample_prediction_df)   # register your predictions
+    print(mean_pred)
+    sample_prediction_df['target'] = mean_pred
+    env.predict(sample_prediction_df)   # register your predictions
+    
+  
