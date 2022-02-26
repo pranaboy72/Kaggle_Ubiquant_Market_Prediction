@@ -85,7 +85,7 @@ kf = KFold(5, shuffle=True, random_state = 111) # random_state = consistency
 for (test_df, sample_prediction_df) in iter_test:
     numpy_test_df=test_df.to_numpy()
     test_len = numpy_test_df.shape[0]
-    print(test_len)
+    #print(test_len)
     
     oos_pred = []
     append_pred =[]
