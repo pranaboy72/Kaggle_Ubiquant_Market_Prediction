@@ -12,32 +12,16 @@ from scipy.stats import zscore
 from sklearn.model_selection import KFold
 from tensorflow.python.keras.callbacks import EarlyStopping
 
-
-train = pd.read_parquet('../input/low-mem-parquet/train_low_mem.parquet')
-df = train[:100000]
-del train
-
-# target
-target = df['target']
-
-# f_data
-index = [f"f_{i}" for i in range(300)]
-f_data = df[index]
-
-target = target.astype("float16")
-f_data = f_data.astype("float16")
-del df
-
 def build_model_1():
     input = Input(shape=(300,), name = 'input')
     hidden1 = Dense(256, activation = 'relu', name = 'dense1')(input)
     batch1 = BatchNormalization(trainable = True)(hidden1)
     hidden2 = Dense(256, activation = 'relu', name = 'dense2')(batch1)
     batch2 = BatchNormalization(trainable = True)(hidden2)
-    dropout = Dropout(0.3)(batch2)
-    hidden3 = Dense(128, activation = 'relu', name = 'dense3')(dropout)
+    hidden3 = Dense(128, activation = 'relu', name = 'dense3')(batch2)
     batch3 = BatchNormalization(trainable = True)(hidden3)
-    output = Dense(1, name = 'output')(batch3)
+    dropout = Dropout(0.4)(batch3)
+    output = Dense(1, name = 'output')(dropout)
     
     model = Model(inputs=[input], outputs=output)
     
@@ -45,14 +29,15 @@ def build_model_1():
     
     return model
     
-def kf_model_save(f_data, target):
-    kf = KFold(4, shuffle=True, random_state = 111) # random_state = consistency
+def kf_model_save(f_data, target, model_num):
+    kf = KFold(5, shuffle=True, random_state = 111) # random_state = consistency
     
     oos_pred = []
     append_pred =[]
     mean_pred = []
     
     fold = 0
+    
     for train_idx, val_idx in kf.split(f_data):
         fold+=1
         print(f"Fold #{fold}")
@@ -62,33 +47,54 @@ def kf_model_save(f_data, target):
 
         model = build_model_1()
         #early_stopping = EarlyStopping(patience = 30)
-        model.fit(x_train, y_train, batch_size=512, validation_data=(x_val, y_val), epochs = EPOCH)
-
-        model.save(f"model_{fold}.h5")
+        model.fit(x_train, y_train, batch_size=256, validation_data=(x_val, y_val), epochs = EPOCH)
+        model_num+=1
+        model.save(f"model_{model_num}.h5")
         
-def model_mean(test_df):    
-    model_1 = load_model("model_1.h5")
-    model_2 = load_model("model_2.h5")
-    model_3 = load_model("model_3.h5")
-    model_4 = load_model("model_4.h5")
+    return model_num
     
-    pred_1 = model_1.predict(test_df[:,2:].astype("float16"))
-    pred_2 = model_2.predict(test_df[:,2:].astype("float16"))
-    pred_3 = model_3.predict(test_df[:,2:].astype("float16"))
-    pred_4 = model_4.predict(test_df[:,2:].astype("float16"))
-    
-    pred = (pred_1 + pred_2 + pred_3 + pred_4) / 4.0
+def model_mean(test_df, model_num):    
+    pred = 0.0
+    for i in range(model_num + 1):
+        if i > 0:
+            model = load_model(f"model_{i}.h5")
+            pred += model.predict(test_df[:,2:].astype("float16"))
+            
+            del model
+            
+    pred = pred / float(model_num)
     
     return pred
 
+### data seperation ###
+train = pd.read_parquet('../input/low-mem-parquet/train_low_mem.parquet')
+df = train[:500000]
+#df2 = train[100000:200000]         # tried to use several batches and make more models, but realized that just making a single dataset is more time efficient & require lower RAM
+del train
+
+## target ##
+target = df['target'].astype("float16")
+#target2 = df2['target'].astype("float16")  
+
+## f_data ##
+index = [f"f_{i}" for i in range(300)]
+f_data = df[index].astype("float16")
+#f_data2 = df2[index].astype("float16")
+
+del df
+
+### prediction & submit ###
 import ubiquant
 env = ubiquant.make_env()   # initialize the environment
 iter_test = env.iter_test()    # an iterator which loops over the test set and sample submission
 
-EPOCH = 10
-kf_model_save(f_data, target)
+EPOCH = 20
+model_num = 0
+
+model_num += kf_model_save(f_data, target, model_num)
+#model_num += kf_model_save(f_data2, target2, model_num)
 
 for (test_df, sample_prediction_df) in iter_test:
     numpy_test_df=test_df.to_numpy()
-    sample_prediction_df['target'] = model_mean(numpy_test_df)
+    sample_prediction_df['target'] = model_mean(numpy_test_df, model_num)
     env.predict(sample_prediction_df)   # register your predictions
