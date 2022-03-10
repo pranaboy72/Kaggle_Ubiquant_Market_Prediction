@@ -32,7 +32,7 @@ def build_model_1():
     
     model = Model(inputs=[input], outputs=output)
     
-    model.compile(loss='binary_crossentropy', optimizer=Adam(0.001), metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy', optimizer=Adam(0.0001), metrics=['accuracy'])
     
     return model
     
