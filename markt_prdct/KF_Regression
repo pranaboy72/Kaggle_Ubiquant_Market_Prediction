@@ -77,7 +77,7 @@ def model_mean(test_df, model_num):
 
 ### data seperation ###
 train = pd.read_parquet('../input/low-mem-parquet/train_low_mem.parquet')
-df = train[:500000]
+df = train[:3000000]
 #df2 = train[100000:200000]         # tried to use several batches and make more models, but realized that just making a single dataset is more time efficient & require lower RAM
 del train
 
