@@ -12,16 +12,23 @@ from scipy.stats import zscore
 from sklearn.model_selection import KFold
 from tensorflow.python.keras.callbacks import EarlyStopping
 
+
+def scheduler(epoch, lr):
+    if epoch < 10:
+        return lr
+    else:
+        return lr * tf.math.exp(-0.1)
+        
 def build_model_1():
     input = Input(shape=(300,), name = 'input')
-    hidden1 = Dense(256, activation = 'relu', name = 'dense1')(input)
-    batch1 = BatchNormalization(trainable = True)(hidden1)
-    hidden2 = Dense(256, activation = 'relu', name = 'dense2')(batch1)
-    batch2 = BatchNormalization(trainable = True)(hidden2)
-    hidden3 = Dense(128, activation = 'relu', name = 'dense3')(batch2)
-    batch3 = BatchNormalization(trainable = True)(hidden3)
-    dropout = Dropout(0.4)(batch3)
-    output = Dense(1, name = 'output')(dropout)
+    x = Dense(512, activation = 'swish', kernel_regularizer="l2")(input)
+    x = BatchNormalization(trainable = True)(x)
+    x = Dense(128, activation = 'swish', kernel_regularizer="l2")(x)
+    x = BatchNormalization(trainable = True)(x)
+    x = Dense(32, activation = 'swish', kernel_regularizer="l2")(x)
+    x = BatchNormalization(trainable = True)(x)
+    x = Dropout(0.4)(x)
+    output = Dense(1)(x)
     
     model = Model(inputs=[input], outputs=output)
     
@@ -29,6 +36,8 @@ def build_model_1():
     
     return model
     
+callback = tf.keras.callbacks.LearningRateScheduler(scheduler)  
+
 def kf_model_save(f_data, target, model_num):
     kf = KFold(5, shuffle=True, random_state = 111) # random_state = consistency
     
@@ -47,7 +56,7 @@ def kf_model_save(f_data, target, model_num):
 
         model = build_model_1()
         #early_stopping = EarlyStopping(patience = 30)
-        model.fit(x_train, y_train, batch_size=256, validation_data=(x_val, y_val), epochs = EPOCH)
+        model.fit(x_train, y_train, batch_size=512, validation_data=(x_val, y_val), epochs = EPOCH, callbacks=[callback])
         model_num+=1
         model.save(f"model_{model_num}.h5")
         
