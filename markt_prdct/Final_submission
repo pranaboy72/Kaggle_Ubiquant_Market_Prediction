@@ -1,0 +1,134 @@
+import numpy as np
+import tensorflow as tf
+import pandas as pd
+import gc
+import pyarrow.parquet as pq
+from tensorflow.keras import Sequential
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras.layers import Dense, Dropout, Input, Activation, BatchNormalization
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Model, load_model
+from sklearn import metrics
+from scipy.stats import zscore
+from sklearn.model_selection import KFold
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, CSVLogger
+from keras.regularizers import l2
+
+def scheduler(epoch, lr):
+    if epoch < 10:
+        return lr
+    else:
+        return lr * tf.math.exp(-0.1)
+        
+def build_model_1():
+    input = Input(shape=(300,), name = 'input')
+    x = Dense(512, activation = 'swish', kernel_regularizer="l2")(input)
+    x = BatchNormalization(trainable = True)(x)
+    x = Dense(256, activation = 'swish', kernel_regularizer="l2")(x)
+    x = BatchNormalization(trainable = True)(x)
+    #x = Dense(256, activation = 'swish', kernel_regularizer="l2")(x)
+    #x = BatchNormalization(trainable = True)(x)
+    #x = Dense(128, activation = 'swish', kernel_regularizer="l2")(x)
+    #x = BatchNormalization(trainable = True)(x)
+    x = Dense(32, activation = 'swish', kernel_regularizer="l2")(x)
+    x = BatchNormalization(trainable = True)(x)
+    x = Dropout(0.3)(x)
+    output = Dense(1)(x)
+    
+    model = Model(inputs=[input], outputs=output)
+    
+    model.compile(loss='mse', optimizer=Adam(0.0001), metrics=['mse'])
+    
+    return model
+    
+def build_model_2():
+    input = Input(shape=(300,))
+    x = Dense(256, kernel_initializer='glorot_normal',
+              kernel_regularizer=l2(0.001), trainable=True)(input)
+    x = BatchNormalization(trainable=True)(x)
+    x = Activation('elu', trainable=True)(x)
+    x = Dropout(0.5)(x)
+    
+    x = Dense(128, kernel_initializer='glorot_normal',
+              kernel_regularizer=l2(0.001), trainable=True)(x)
+    x = BatchNormalization(trainable=True)(x)
+    x = Activation('elu', trainable=True)(x)
+    x = Dropout(0.5)(x)
+    output = Dense(1)(x)
+    
+    model = Model(inputs=[input], outputs=output)
+    model.compile(loss='mse', optimizer=Adam(0.001), metrics=['mse'])
+    
+    return model
+    
+callback = LearningRateScheduler(scheduler)
+early_stopping = EarlyStopping(monitor='val_loss', patience=4, verbose=0, mode='min')
+rl_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=2, verbose=1, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+
+def kf_model_save(f_data, target, model_num):
+    kf = KFold(5, shuffle=True, random_state = 111) # random_state = consistency
+    
+    oos_pred = []
+    append_pred =[]
+    mean_pred = []
+    
+    fold = 0
+    
+    for train_idx, val_idx in kf.split(f_data):
+        fold+=1
+        print(f"Fold #{fold}")
+
+        x_train, x_val = f_data.loc[train_idx], f_data.loc[val_idx]
+        y_train, y_val = target.loc[train_idx], target.loc[val_idx]
+
+        model = build_model_1()
+        #early_stopping = EarlyStopping(patience = 30)
+        model.fit(x_train, y_train, batch_size=512, validation_data=(x_val, y_val), epochs = EPOCH, callbacks=[early_stopping, callback])
+        model_num+=1
+        model.save(f"model_{model_num}.h5")
+        
+        del x_train, x_val, y_train, y_val
+    return model_num
+    
+def model_mean(test_df, model_num):    
+    pred = 0.0
+    for i in range(model_num + 1):
+        if i > 0:
+            model = load_model(f"model_{i}.h5")
+            pred += model.predict(test_df[:,2:].astype("float16"))
+            
+            del model
+            
+    pred = pred / float(model_num)
+    
+    return pred
+    
+train = pd.read_parquet('../input/low-mem-parquet/train_low_mem.parquet')
+#train
+
+df = train
+del train
+
+# target
+target = df['target'].astype("float16")
+
+# f_data
+index = [f"f_{i}" for i in range(300)]
+f_data = df[index].astype("float16")
+
+del df, index
+
+import ubiquant
+env = ubiquant.make_env()   # initialize the environment
+iter_test = env.iter_test()    # an iterator which loops over the test set and sample submission
+
+EPOCH = 15
+model_num = 0
+
+model_num += kf_model_save(f_data, target, model_num)
+del f_data, target
+
+for (test_df, sample_prediction_df) in iter_test:
+    numpy_test_df=test_df.to_numpy()
+    sample_prediction_df['target'] = model_mean(numpy_test_df, model_num)
+    env.predict(sample_prediction_df)   # register your predictions
